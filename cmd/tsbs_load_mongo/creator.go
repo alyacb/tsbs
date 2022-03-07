@@ -69,6 +69,15 @@ func (d *dbCreator) CreateDB(dbName string) error {
 		return fmt.Errorf("create collection err: %v", createCollRes.Err().Error())
 	}
 
+	if timeseriesCollection {
+		var model = []mongo.IndexModel{{Keys: bson.D{{"meta.hostname", 1}, {"control.max.time", 1}, {"control.min.time", 1}}}}
+		opts := options.CreateIndexes()
+		_, err := d.client.Database(dbName).Collection("system.buckets."+collectionName).Indexes().CreateMany(context.Background(), model, opts)
+		if err != nil {
+			return fmt.Errorf("create indexes err: %v", err.Error())
+		}
+	}
+
 	if collectionSharded {
 	        // first enable sharding on dbName
 		enableShardingCmd := make(bson.D, 0, 4)
